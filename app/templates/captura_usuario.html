@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block titulo %}Agregar usuario existente{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Agregar usuario existente</h1>
+    <p class="muted">Registra en el padrón un usuario que ya opera en un contrato existente. Origen «Captura manual».</p>
+  </div>
+</div>
+<form method="post" class="tarjeta">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="grid">
+    {{ m.texto('contrato', 'Contrato de banca electrónica', datos, errores, 'text', 'inputmode="numeric" pattern="[0-9]{11}" maxlength="11" autocomplete="off" required', '11 dígitos') }}
+    {{ m.texto('numero_usuario', 'Número de usuario', datos, errores, 'text', 'inputmode="numeric" pattern="[0-9]{8}" maxlength="8" autocomplete="off" required', '8 dígitos') }}
+    {{ m.texto('nombre_completo', 'Nombre completo', datos, errores, 'text', 'maxlength="150" required') }}
+  </div>
+  <div class="pie-form">
+    <button class="boton primario" type="submit">Guardar en el padrón</button>
+    <a class="boton" href="{{ url_for('cartera.lista') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

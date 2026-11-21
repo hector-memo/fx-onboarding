@@ -1,0 +1,8 @@
+{% import "_macros.html" as m with context %}
+<div class="grid">
+  {{ m.texto('nombre_cliente', 'Nombre de cliente', datos, errores, 'text', 'maxlength="150" required') }}
+  {{ m.texto('rfc', 'RFC', datos, errores, 'text', 'maxlength="13" autocomplete="off" required', '12 caracteres (persona moral) o 13 (persona física)') }}
+  {{ m.seleccion('region', 'Región', cat.regiones, datos, errores, 'required') }}
+  {{ m.seleccion('segmento', 'Segmento', cat.segmentos, datos, errores, 'required') }}
+  {{ m.texto('zona', 'Zona', datos, errores, 'text', 'maxlength="100" required') }}
+</div>

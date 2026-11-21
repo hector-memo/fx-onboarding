@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block titulo %}Agregar cliente existente{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Agregar cliente existente</h1>
+    <p class="muted">Para clientes que ya operan en la plataforma. Se registra en el padrón con origen «Captura manual».</p>
+  </div>
+  <div class="acciones">
+    <a class="boton" href="{{ url_for('padron_admin.agregar_usuario') }}">Agregar usuario a un contrato existente</a>
+  </div>
+</div>
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <fieldset>
+    <legend>Contrato y asignación</legend>
+    <div class="grid">
+      {{ m.texto('contrato', 'Contrato de banca electrónica', datos, errores, 'text', 'inputmode="numeric" pattern="[0-9]{11}" maxlength="11" autocomplete="off" required', '11 dígitos') }}
+      {{ m.seleccion('ejecutivo_asignado', 'Ejecutivo asignado', ejecutivos, datos, errores, 'required') }}
+      {{ m.texto('fecha_alta', 'Fecha de alta en plataforma (opcional)', datos, errores, 'date') }}
+    </div>
+  </fieldset>
+  <fieldset><legend>Datos de la empresa</legend>{% include "_campos_empresa.html" %}</fieldset>
+  <fieldset><legend>Permisos y condiciones</legend>{% include "_campos_permisos.html" %}</fieldset>
+  <fieldset>
+    <legend>Usuarios</legend>
+    {% if errores.get('_usuarios') %}<p class="error-campo">{{ errores._usuarios }}</p>{% endif %}
+    <div class="tabla-scroll">
+      <table id="tabla-usuarios">
+        <thead><tr><th>Número de usuario</th><th>Nombre completo</th></tr></thead>
+        <tbody>
+        {% for numero, nombre in filas_usuarios %}
+          <tr>
+            <td><input name="usuario_numero" value="{{ numero }}" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" aria-label="Número de usuario"></td>
+            <td>
+              <input name="usuario_nombre" value="{{ nombre }}" maxlength="150" aria-label="Nombre completo">
+              {% if errores_usuarios.get(loop.index0) %}<p class="error-campo">{{ errores_usuarios[loop.index0] }}</p>{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p><button class="boton chico" type="button" data-agregar-fila="tabla-usuarios">+ Agregar fila</button></p>
+  </fieldset>
+  <div class="pie-form">
+    <button class="boton primario" type="submit">Guardar en el padrón</button>
+    <a class="boton" href="{{ url_for('cartera.lista') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

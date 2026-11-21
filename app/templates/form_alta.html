@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block titulo %}Alta de cliente nuevo{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Alta de cliente nuevo</h1>
+    <p class="muted">Contrato nuevo, o usuario nuevo en un contrato de {{ 'cualquier cartera' if es_admin else 'tu cartera' }}.</p>
+  </div>
+</div>
+
+{% if errores.get('_general') %}<p class="alerta error">{{ errores._general }}</p>{% endif %}
+{% if contexto.get('duplicado_contrato') %}
+  <div class="alerta aviso">
+    Este cliente ya existe. Si necesitas modificar sus permisos, usa el formulario de Cambio de permisos.
+    <a class="boton chico" href="{{ url_for('formularios.cambio', contrato=contexto.duplicado_contrato) }}">Ir a Cambio de permisos</a>
+  </div>
+{% endif %}
+
+<form method="post" data-tipo="alta" data-api="{{ api_base }}" data-repost="{{ '1' if repost else '0' }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <fieldset>
+    <legend>Contrato</legend>
+    <div class="grid">
+      {{ m.texto('contrato', 'Contrato de banca electrónica', datos, errores, 'text', 'inputmode="numeric" pattern="[0-9]{11}" maxlength="11" autocomplete="off" required', '11 dígitos') }}
+    </div>
+    <p id="aviso-contrato" class="alerta info" hidden></p>
+  </fieldset>
+
+  <fieldset id="seccion-empresa">
+    <legend>Datos de la empresa</legend>
+    {% include "_campos_empresa.html" %}
+  </fieldset>
+
+  <fieldset>
+    <legend>Datos del usuario</legend>
+    <div class="grid">
+      {{ m.texto('numero_usuario', 'Número de usuario', datos, errores, 'text', 'inputmode="numeric" pattern="[0-9]{8}" maxlength="8" autocomplete="off" required', '8 dígitos') }}
+      {{ m.texto('nombre_completo', 'Nombre completo', datos, errores, 'text', 'maxlength="150" required') }}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Datos del ejecutivo</legend>
+    <div class="grid">
+      {% if es_admin %}
+        {{ m.seleccion('ejecutivo', 'Ejecutivo solicitante', ejecutivos, datos, errores, '', 'El asignado al contrato') }}
+      {% else %}
+        <div class="campo"><label for="ejecutivo-sesion">Ejecutivo solicitante</label><input id="ejecutivo-sesion" value="{{ usuario_actual.nombre }}" readonly></div>
+      {% endif %}
+      {{ m.texto('correo_notificaciones', 'Correo para notificaciones', datos, errores, 'email', 'maxlength="150" required') }}
+    </div>
+  </fieldset>
+
+  <fieldset id="seccion-permisos">
+    <legend>Permisos y condiciones</legend>
+    {% include "_campos_permisos.html" %}
+  </fieldset>
+
+  <fieldset>
+    <legend>Comentarios</legend>
+    {{ m.area('comentarios', 'Comentarios (opcional)', datos, errores, 'maxlength="500" rows="3"') }}
+  </fieldset>
+
+  <div class="pie-form">
+    <button class="boton primario" type="submit">Enviar solicitud</button>
+    <a class="boton" href="{{ url_for('auth.inicio') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

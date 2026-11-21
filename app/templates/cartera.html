@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block titulo %}{{ 'Cartera de clientes' if es_admin else 'Mi cartera' }}{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>{{ 'Cartera de clientes' if es_admin else 'Mi cartera' }}</h1>
+    <p class="muted">Clientes que ya operan en la plataforma{{ '' if es_admin else ' y están asignados a ti' }}.</p>
+  </div>
+  <div class="acciones">
+    <a class="boton" href="{{ url_args('cartera.exportar') }}">Exportar a Excel</a>
+    {% if es_admin %}
+      <a class="boton" href="{{ url_for('padron_admin.carga') }}">Carga inicial</a>
+      <a class="boton primario" href="{{ url_for('padron_admin.agregar_cliente') }}">Agregar cliente existente</a>
+    {% else %}
+      <a class="boton primario" href="{{ url_for('formularios.alta') }}">Nueva alta</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="contadores">
+  <div class="contador azul"><span class="num">{{ contadores.contratos }}</span><span class="txt">Contratos</span></div>
+  <div class="contador verde"><span class="num">{{ contadores.usuarios }}</span><span class="txt">Usuarios</span></div>
+</div>
+
+<form class="tarjeta filtros" method="get">
+  {{ m.seleccion('region', 'Región', cat.regiones, filtros, {}, '', 'Todas') }}
+  {{ m.seleccion('segmento', 'Segmento', cat.segmentos, filtros, {}, '', 'Todos') }}
+  {{ m.texto('zona', 'Zona', filtros, {}, 'search', 'placeholder="Contiene…"') }}
+  {{ m.seleccion('grupo_spot', 'Grupo spot', cat.grupos_spot, filtros, {}, '', 'Todos') }}
+  {% if es_admin %}{{ m.seleccion('ejecutivo', 'Ejecutivo asignado', ejecutivos, filtros, {}, '', 'Todos') }}{% endif %}
+  {{ m.texto('q', 'Buscar', filtros, {}, 'search', 'placeholder="Contrato, cliente, RFC o número de usuario"') }}
+  <div class="acciones">
+    <button class="boton primario" type="submit">Filtrar</button>
+    <a class="boton" href="{{ url_for('cartera.lista') }}">Limpiar</a>
+  </div>
+</form>
+
+<div class="tabla-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Contrato</th><th>Nombre de cliente</th><th>RFC</th><th>Región</th><th>Segmento</th><th>Zona</th>
+        <th>Usuarios</th><th>Grupo spot</th><th>Divisas</th><th>Ejecutivo</th><th>Fecha de alta</th><th>Última actualización</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for c in filas %}
+      <tr>
+        <td><a href="{{ url_for('cartera.detalle', contrato=c.contrato) }}">{{ c.contrato }}</a></td>
+        <td><a href="{{ url_for('cartera.detalle', contrato=c.contrato) }}">{{ c.nombre_cliente }}</a></td>
+        <td>{{ c.rfc }}</td>
+        <td>{{ c.region }}</td>
+        <td>{{ c.segmento }}</td>
+        <td>{{ c.zona }}</td>
+        <td class="num">{{ c.num_usuarios }}</td>
+        <td>{{ c.grupo_spot }}</td>
+        <td>{{ c.divisas|mostrar('divisas') }}</td>
+        <td>{{ c.ejecutivo_asignado }}</td>
+        <td>{{ c.fecha_alta|fecha_corta }}</td>
+        <td>{{ c.ultima_actualizacion|fecha }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="12" class="vacio">No hay clientes con estos filtros.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{{ m.paginacion(pagina, total, por_pagina) }}
+{% endblock %}

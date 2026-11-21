@@ -1,0 +1,7 @@
+{
+  "_instrucciones": "Reemplaza estos valores de ejemplo por los reales. Los cambios se aplican sin reiniciar la app. Si quitas un valor, los registros históricos lo siguen mostrando. La zona es texto libre y no tiene catálogo.",
+  "regiones": ["Norte", "Noreste", "Centro", "Bajío", "Occidente", "Sur"],
+  "segmentos": ["Corporativo", "Empresarial", "PyME", "Gobierno", "Institucional"],
+  "grupos_spot": ["Spot Básico", "Spot Estándar", "Spot Preferente", "Spot Premium"],
+  "divisas": ["USDMXN", "EURMXN", "GBPMXN", "CADMXN", "CHFMXN", "EURUSD", "GBPUSD", "USDCAD"]
+}

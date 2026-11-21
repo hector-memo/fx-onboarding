@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block titulo %}Solicitudes{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Solicitudes</h1>
+    <p class="muted">{{ total }} resultado(s) con los filtros actuales. SLA: {{ sla }} día(s) hábil(es).</p>
+  </div>
+  <div class="acciones">
+    <a class="boton" href="{{ url_args('admin.exportar') }}">Exportar a Excel</a>
+    <a class="boton" href="{{ url_for('admin.exportar_dia') }}">Exportar solicitudes del día</a>
+  </div>
+</div>
+
+{% include "_contadores_solicitudes.html" %}
+
+<form class="tarjeta filtros" method="get">
+  {{ m.texto('desde', 'Desde', filtros, {}, 'date') }}
+  {{ m.texto('hasta', 'Hasta', filtros, {}, 'date') }}
+  {{ m.seleccion('tipo', 'Tipo', TIPOS, filtros, {}, '', 'Todos') }}
+  {{ m.seleccion('estatus', 'Estatus', ESTATUS, filtros, {}, '', 'Todos') }}
+  {{ m.seleccion('ejecutivo', 'Ejecutivo', ejecutivos, filtros, {}, '', 'Todos') }}
+  {{ m.seleccion('region', 'Región', cat.regiones, filtros, {}, '', 'Todas') }}
+  {{ m.seleccion('segmento', 'Segmento', cat.segmentos, filtros, {}, '', 'Todos') }}
+  {{ m.seleccion('estatus_correo', 'Estatus de correo', ESTATUS_CORREO, filtros, {}, '', 'Todos') }}
+  {{ m.texto('q', 'Buscar', filtros, {}, 'search', 'placeholder="Contrato, usuario, cliente o folio"') }}
+  <div class="acciones">
+    <button class="boton primario" type="submit">Filtrar</button>
+    <a class="boton" href="{{ url_for('admin.solicitudes') }}">Limpiar</a>
+  </div>
+</form>
+
+<form method="post" action="{{ url_for('admin.masivo') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="volver" value="{{ request.full_path }}">
+  <div class="tabla-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th><input type="checkbox" data-seleccionar-todo aria-label="Seleccionar todas las pendientes"></th>
+          <th>ID</th><th>Fecha</th><th>Antigüedad</th><th>Tipo</th><th>Estatus</th><th>Ejecutivo</th>
+          <th>Contrato</th><th>Cliente</th><th>Usuario</th><th>Correo</th><th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for s in filas %}
+        <tr>
+          <td>{% if s.estatus == 'Pendiente' %}<input type="checkbox" name="ids" value="{{ s.id }}" aria-label="Seleccionar {{ s.id|folio }}">{% endif %}</td>
+          <td><a href="{{ url_for('ejecutivo.detalle', sid=s.id) }}">{{ s.id|folio }}</a></td>
+          <td>{{ s.fecha_solicitud|fecha }}</td>
+          <td>
+            {% if s.id in antiguedad %}
+              <span class="{{ 'vencida' if antiguedad[s.id] > sla }}">{{ antiguedad[s.id] }} día(s)</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>{{ s.tipo }}</td>
+          <td>{{ m.badge(s.estatus) }}</td>
+          <td>{{ s.ejecutivo }}</td>
+          <td>{{ s.contrato }}</td>
+          <td>{{ s.nombre_cliente }}</td>
+          <td>{{ s.numero_usuario or '—' }}</td>
+          <td>{{ m.badge_correo(s.estatus_correo) }}</td>
+          <td class="acciones-fila">
+            <a class="boton chico" href="{{ url_for('ejecutivo.detalle', sid=s.id) }}">Ver</a>
+            {% if s.estatus == 'Pendiente' %}
+              <button class="boton chico" type="submit" formaction="{{ url_for('admin.cambiar_estatus', sid=s.id) }}" name="nuevo" value="Listo para operar">Listo</button>
+            {% endif %}
+            {% if s.estatus_correo in ('Error', 'Pendiente') %}
+              <button class="boton chico" type="submit" formaction="{{ url_for('admin.reintentar_correo', sid=s.id) }}">Reintentar correo</button>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="12" class="vacio">No hay solicitudes con estos filtros.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="pie-form">
+    <button class="boton primario" type="submit">Marcar seleccionadas como Listo para operar</button>
+    <span class="muted">Para rechazar, abre la solicitud: el motivo es obligatorio.</span>
+  </div>
+</form>
+{{ m.paginacion(pagina, total, por_pagina) }}
+{% endblock %}

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<body style="margin:0;padding:16px;background:#f4f6f9;font-family:Arial,Helvetica,sans-serif;color:#1d2733">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #d9dee5;border-radius:8px">
+  <tr><td style="background:#1f4e79;color:#ffffff;padding:14px 18px;font-size:18px;font-weight:bold;border-radius:8px 8px 0 0">FX Onboarding</td></tr>
+  <tr><td style="padding:18px">
+    <p style="margin:0 0 12px">La solicitud <strong>{{ sol.id|folio }}</strong> cambió a estatus <strong>{{ sol.estatus }}</strong>.</p>
+    {% if sol.estatus == 'Rechazada' %}
+    <p style="margin:0 0 12px;background:#fdecea;color:#b42318;padding:10px;border-radius:6px"><strong>Motivo de rechazo:</strong> {{ sol.motivo_resolucion }}</p>
+    {% endif %}
+    <table role="presentation" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:14px">
+      {% set filas = [
+        ('ID de solicitud', sol.id|folio), ('Tipo', sol.tipo), ('Estatus', sol.estatus),
+        ('Cliente', sol.nombre_cliente), ('Contrato', sol.contrato), ('Número de usuario', sol.numero_usuario or '—'),
+        ('Grupo de parametrización spot', sol.grupo_spot), ('Multiaprobación', sol.multiaprobacion),
+        ('Multiabono', sol.multiabono), ('Divisas autorizadas', sol.divisas|mostrar('divisas')),
+        ('Límite por operación (USD)', sol.limite_operacion|mostrar('limite_operacion')),
+        ('Límite diario (USD)', sol.limite_diario|mostrar('limite_diario')),
+        ('Fecha de atención', sol.fecha_atencion|fecha),
+        ('Atendido por', sol.atendido_por)
+      ] %}
+      {% for etiqueta, valor in filas %}
+      <tr>
+        <td style="border-bottom:1px solid #edf0f3;color:#5b6776;width:45%">{{ etiqueta }}</td>
+        <td style="border-bottom:1px solid #edf0f3;font-weight:bold">{{ valor }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <p style="margin:16px 0 0;color:#5b6776;font-size:12px">Mensaje automático de FX Onboarding. No respondas a este correo.</p>
+  </td></tr>
+</table>
+</body>
+</html>

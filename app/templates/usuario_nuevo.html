@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block titulo %}Nuevo usuario{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Nuevo usuario</h1>
+    <p class="muted">La contraseña es temporal: el usuario deberá cambiarla la primera vez que entre.</p>
+  </div>
+</div>
+<form method="post" class="tarjeta">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="grid">
+    {{ m.texto('usuario', 'Usuario', datos, errores, 'text', 'maxlength="30" autocomplete="off" required', 'Minúsculas, números, punto, guion o guion bajo (3 a 30). No se puede cambiar después.') }}
+    {{ m.texto('nombre', 'Nombre completo', datos, errores, 'text', 'maxlength="150" required') }}
+    {{ m.texto('correo', 'Correo', datos, errores, 'email', 'maxlength="150" required', 'Se precarga como correo para notificaciones en sus solicitudes') }}
+    {{ m.seleccion('rol', 'Rol', roles, datos, errores, 'required', '') }}
+    {{ m.texto('contrasena', 'Contraseña temporal', {}, errores, 'text', 'minlength="8" autocomplete="off" required', 'Mínimo 8 caracteres, con letras y números') }}
+  </div>
+  <div class="pie-form">
+    <button class="boton primario" type="submit">Crear usuario</button>
+    <a class="boton" href="{{ url_for('usuarios_admin.lista') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

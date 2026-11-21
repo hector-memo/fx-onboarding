@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block titulo %}Notificaciones{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Notificaciones</h1>
+    <p class="muted">
+      {% if es_admin %}Se crea un aviso por cada solicitud nueva que se recibe.
+      {% else %}Se crea un aviso cada vez que cambia el estatus de una de tus solicitudes.{% endif %}
+    </p>
+  </div>
+  {% if sin_leer %}
+  <form method="post" action="{{ url_for('notificaciones.marcar_todas') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="estado" value="{{ 'no_leidas' if solo_no_leidas }}">
+    <button class="boton" type="submit">Marcar todas como leídas</button>
+  </form>
+  {% endif %}
+</div>
+
+<nav class="pestanas" aria-label="Filtro de notificaciones">
+  <a href="{{ url_for('notificaciones.lista') }}" class="{{ 'activo' if not solo_no_leidas }}">Todas</a>
+  <a href="{{ url_for('notificaciones.lista', estado='no_leidas') }}" class="{{ 'activo' if solo_no_leidas }}">Sin leer ({{ sin_leer }})</a>
+</nav>
+
+<ul class="notificaciones">
+{% for n in filas %}
+  <li class="notificacion{{ ' sin-leer' if not n.leida }}">
+    <div class="notif-cuerpo">
+      <div class="notif-meta">
+        {% if not n.leida %}<span class="punto" aria-hidden="true"></span><span class="sr">Sin leer.</span>{% endif %}
+        <span>{{ n.tipo }}</span> · <time>{{ n.fecha|fecha }}</time>
+        {% if n.estatus %}{{ m.badge(n.estatus) }}{% endif %}
+      </div>
+      <p class="notif-mensaje">{{ n.mensaje }}</p>
+    </div>
+    <div class="acciones-fila">
+      {% if n.solicitud_id %}
+      <form method="post" action="{{ url_for('notificaciones.abrir', nid=n.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="estado" value="{{ 'no_leidas' if solo_no_leidas }}">
+        <button class="boton chico primario" type="submit">Ver solicitud</button>
+      </form>
+      {% endif %}
+      {% if not n.leida %}
+      <form method="post" action="{{ url_for('notificaciones.leida', nid=n.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="estado" value="{{ 'no_leidas' if solo_no_leidas }}">
+        <button class="boton chico" type="submit">Marcar como leída</button>
+      </form>
+      {% endif %}
+    </div>
+  </li>
+{% else %}
+  <li class="vacio tarjeta">{{ 'No tienes notificaciones sin leer.' if solo_no_leidas else 'Aún no tienes notificaciones.' }}</li>
+{% endfor %}
+</ul>
+{{ m.paginacion(pagina, total, por_pagina) }}
+{% endblock %}

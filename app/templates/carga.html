@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block titulo %}Carga inicial{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Carga inicial de clientes existentes</h1>
+    <p class="muted">Agrega al padrón los clientes que ya operan en la plataforma. No se envían correos.</p>
+  </div>
+</div>
+
+<div class="dos-columnas">
+  <section class="tarjeta">
+    <h2>1. Descarga la plantilla</h2>
+    <p>Incluye las hojas Clientes y Usuarios, listas desplegables de los catálogos y columnas de dígitos en formato Texto.</p>
+    <a class="boton" href="{{ url_for('padron_admin.plantilla') }}">Descargar plantilla</a>
+  </section>
+  <section class="tarjeta">
+    <h2>2. Sube el archivo</h2>
+    <form method="post" action="{{ url_for('padron_admin.subir') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="campo">
+        <label for="archivo">Archivo .xlsx</label>
+        <input id="archivo" name="archivo" type="file" accept=".xlsx" required>
+      </div>
+      <button class="boton primario" type="submit">Revisar archivo</button>
+    </form>
+  </section>
+</div>
+
+{% if resultado %}
+<section class="tarjeta">
+  <h2>3. Vista previa: {{ archivo }}</h2>
+  <div class="contadores">
+    <div class="contador verde"><span class="num">{{ resultado.clientes|length }}</span><span class="txt">Contratos válidos</span></div>
+    <div class="contador verde"><span class="num">{{ resultado.usuarios|length }}</span><span class="txt">Usuarios válidos</span></div>
+    <div class="contador rojo"><span class="num">{{ resultado.filas_con_error }}</span><span class="txt">Filas con error</span></div>
+    <div class="contador gris"><span class="num">{{ resultado.omitidos|length }}</span><span class="txt">Omitidas (ya en el padrón)</span></div>
+  </div>
+  <div class="acciones">
+    {% if resultado.filas_validas %}
+    <form method="post" action="{{ url_for('padron_admin.confirmar') }}" data-confirmar="Se importarán {{ resultado.filas_validas }} fila(s) válidas. Las filas con error no se importan. ¿Continuar?">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="boton primario" type="submit">Confirmar e importar {{ resultado.filas_validas }} fila(s) válidas</button>
+    </form>
+    {% else %}
+      <p class="alerta aviso">No hay filas válidas para importar.</p>
+    {% endif %}
+    {% if resultado.errores or resultado.omitidos %}
+      <a class="boton" href="{{ url_for('padron_admin.reporte_errores') }}">Descargar reporte de errores</a>
+    {% endif %}
+  </div>
+</section>
+
+{% if resultado.errores %}
+<section class="tarjeta">
+  <h2>Errores ({{ resultado.errores|length }})</h2>
+  <div class="tabla-scroll">
+    <table>
+      <thead><tr><th>Hoja</th><th>Fila</th><th>Campo</th><th>Mensaje</th></tr></thead>
+      <tbody>
+      {% for e in resultado.errores %}
+        <tr><td>{{ e.hoja }}</td><td>{{ e.fila }}</td><td>{{ e.campo }}</td><td>{{ e.mensaje }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if resultado.omitidos %}
+<section class="tarjeta">
+  <h2>Omitidas ({{ resultado.omitidos|length }})</h2>
+  <div class="tabla-scroll">
+    <table>
+      <thead><tr><th>Hoja</th><th>Fila</th><th>Motivo</th></tr></thead>
+      <tbody>
+      {% for o in resultado.omitidos %}
+        <tr><td>{{ o.hoja }}</td><td>{{ o.fila }}</td><td>{{ o.motivo }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if resultado.clientes or resultado.usuarios %}
+<div class="dos-columnas">
+  <section class="tarjeta">
+    <h2>Contratos que se importarán</h2>
+    <div class="tabla-scroll">
+      <table>
+        <thead><tr><th>Fila</th><th>Contrato</th><th>Cliente</th><th>Ejecutivo</th></tr></thead>
+        <tbody>
+        {% for fila, d in resultado.clientes %}
+          <tr><td>{{ fila }}</td><td>{{ d.contrato }}</td><td>{{ d.nombre_cliente }}</td><td>{{ d.ejecutivo_asignado }}</td></tr>
+        {% else %}
+          <tr><td colspan="4" class="vacio">Ninguno.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="tarjeta">
+    <h2>Usuarios que se importarán</h2>
+    <div class="tabla-scroll">
+      <table>
+        <thead><tr><th>Fila</th><th>Contrato</th><th>Usuario</th><th>Nombre</th></tr></thead>
+        <tbody>
+        {% for fila, d in resultado.usuarios %}
+          <tr><td>{{ fila }}</td><td>{{ d.contrato }}</td><td>{{ d.numero_usuario }}</td><td>{{ d.nombre_completo }}</td></tr>
+        {% else %}
+          <tr><td colspan="4" class="vacio">Ninguno.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endif %}
+{% endif %}
+
+<section class="tarjeta">
+  <h2>Cargas recientes</h2>
+  <div class="tabla-scroll">
+    <table>
+      <thead><tr><th>Fecha</th><th>Usuario</th><th>Archivo</th><th>Importadas</th><th>Con error</th><th>Omitidas</th></tr></thead>
+      <tbody>
+      {% for c in cargas %}
+        <tr><td>{{ c.fecha|fecha }}</td><td>{{ c.usuario }}</td><td>{{ c.archivo }}</td><td class="num">{{ c.validas }}</td><td class="num">{{ c.con_error }}</td><td class="num">{{ c.omitidas }}</td></tr>
+      {% else %}
+        <tr><td colspan="6" class="vacio">Todavía no hay cargas.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

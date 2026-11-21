@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block titulo %}Usuarios{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Usuarios</h1>
+    <p class="muted">Administradores y ejecutivos que pueden entrar a la aplicación.</p>
+  </div>
+  <div class="acciones">
+    <a class="boton primario" href="{{ url_for('usuarios_admin.nuevo') }}">Nuevo usuario</a>
+  </div>
+</div>
+
+<div class="contadores">
+  <div class="contador azul"><span class="num">{{ contadores.admins }}</span><span class="txt">Administradores activos</span></div>
+  <div class="contador verde"><span class="num">{{ contadores.ejecutivos }}</span><span class="txt">Ejecutivos activos</span></div>
+  <div class="contador gris"><span class="num">{{ contadores.inactivos }}</span><span class="txt">Inactivos</span></div>
+</div>
+
+<form class="tarjeta filtros" method="get">
+  {{ m.seleccion('rol', 'Rol', roles, filtros, {}, '', 'Todos') }}
+  {{ m.seleccion('estado', 'Estado', [('activo', 'Activos'), ('inactivo', 'Inactivos')], filtros, {}, '', 'Todos') }}
+  {{ m.texto('q', 'Buscar', filtros, {}, 'search', 'placeholder="Usuario, nombre o correo"') }}
+  <div class="acciones">
+    <button class="boton primario" type="submit">Filtrar</button>
+    <a class="boton" href="{{ url_for('usuarios_admin.lista') }}">Limpiar</a>
+  </div>
+</form>
+
+<div class="tabla-scroll">
+  <table>
+    <thead>
+      <tr><th>Usuario</th><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Contratos</th><th>Pendientes</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for u in filas %}
+      <tr>
+        <td><a href="{{ url_for('usuarios_admin.detalle', usuario=u.usuario) }}">{{ u.usuario }}</a></td>
+        <td>{{ u.nombre }}{% if u.usuario == usuario_actual.usuario %} <span class="muted">(tú)</span>{% endif %}</td>
+        <td>{{ u.correo }}</td>
+        <td>{{ 'Administrador' if u.rol == 'admin' else 'Ejecutivo' }}</td>
+        <td>
+          {% if u.activo %}<span class="etiqueta verde">Activo</span>{% else %}<span class="etiqueta gris">Inactivo</span>{% endif %}
+          {% if u.usuario in bloqueados %}<span class="etiqueta rojo">Bloqueado</span>{% endif %}
+          {% if u.activo and u.debe_cambiar %}<span class="etiqueta amarillo">Contraseña temporal</span>{% endif %}
+        </td>
+        <td class="num">{{ u.num_contratos if u.rol == 'ejecutivo' else '—' }}</td>
+        <td class="num">{{ u.pendientes if u.rol == 'ejecutivo' else '—' }}</td>
+        <td><a class="boton chico" href="{{ url_for('usuarios_admin.detalle', usuario=u.usuario) }}">Administrar</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8" class="vacio">No hay usuarios con estos filtros.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

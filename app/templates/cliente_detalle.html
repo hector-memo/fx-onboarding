@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block titulo %}{{ cliente.contrato }}{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>{{ cliente.nombre_cliente }}</h1>
+    <p class="muted">Contrato {{ cliente.contrato }} · alta {{ cliente.fecha_alta|fecha_corta }} · origen: {{ cliente.origen }}{% if cliente.solicitud_origen %} ({{ cliente.solicitud_origen|folio }}){% endif %}</p>
+  </div>
+  <div class="acciones">
+    <a class="boton primario" href="{{ url_for('formularios.alta', contrato=cliente.contrato) }}">Agregar usuario</a>
+    <a class="boton" href="{{ url_for('formularios.cambio', contrato=cliente.contrato) }}">Solicitar cambio de permisos</a>
+    {% if es_admin %}<a class="boton" href="{{ url_for('cartera.editar', contrato=cliente.contrato) }}">Editar</a>{% endif %}
+    <a class="boton" href="{{ url_for('cartera.lista') }}">Volver</a>
+  </div>
+</div>
+
+<div class="dos-columnas">
+  <section class="tarjeta">
+    <h2>Datos de la empresa</h2>
+    <dl class="datos">
+      <dt>RFC</dt><dd>{{ cliente.rfc }}</dd>
+      <dt>Región</dt><dd>{{ cliente.region }}</dd>
+      <dt>Segmento</dt><dd>{{ cliente.segmento }}</dd>
+      <dt>Zona</dt><dd>{{ cliente.zona }}</dd>
+      <dt>Ejecutivo asignado</dt><dd>{{ cliente.ejecutivo_asignado }}</dd>
+      <dt>Última actualización</dt><dd>{{ cliente.ultima_actualizacion|fecha }} por {{ cliente.actualizado_por }}</dd>
+    </dl>
+  </section>
+  <section class="tarjeta">
+    <h2>Permisos vigentes</h2>
+    <dl class="datos">
+      {% for campo in CAMPOS_PERMISOS %}
+      <dt>{{ ETIQUETAS[campo] }}</dt><dd>{{ cliente[campo]|mostrar(campo) }}</dd>
+      {% endfor %}
+    </dl>
+  </section>
+</div>
+
+<section class="tarjeta">
+  <div class="encabezado">
+    <h2>Usuarios ({{ usuarios|length }})</h2>
+    {% if es_admin %}<a class="boton chico" href="{{ url_for('padron_admin.agregar_usuario', contrato=cliente.contrato) }}">Agregar usuario existente</a>{% endif %}
+  </div>
+  <div class="tabla-scroll">
+    <table>
+      <thead><tr><th>Número de usuario</th><th>Nombre completo</th><th>Fecha de alta</th><th>Origen</th>{% if es_admin %}<th>Corrección</th>{% endif %}</tr></thead>
+      <tbody>
+      {% for u in usuarios %}
+        <tr>
+          <td>{{ u.numero_usuario }}</td>
+          <td>{{ u.nombre_completo }}</td>
+          <td>{{ u.fecha_alta|fecha_corta }}</td>
+          <td>{{ u.origen }}{% if u.solicitud_origen %} ({{ u.solicitud_origen|folio }}){% endif %}</td>
+          {% if es_admin %}
+          <td>
+            <form method="post" action="{{ url_for('cartera.eliminar_usuario', contrato=cliente.contrato, numero=u.numero_usuario) }}" class="en-linea" data-confirmar="¿Eliminar el usuario {{ u.numero_usuario }} del padrón? Úsalo solo para corregir errores de captura.">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input name="motivo" placeholder="Motivo" required maxlength="300" aria-label="Motivo de eliminación">
+              <button class="boton chico peligro" type="submit">Eliminar</button>
+            </form>
+          </td>
+          {% endif %}
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="vacio">Este contrato no tiene usuarios.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="tarjeta">
+  <h2>Solicitudes relacionadas{% if not es_admin %} (tuyas){% endif %}</h2>
+  <div class="tabla-scroll">
+    <table>
+      <thead><tr><th>ID</th><th>Fecha</th><th>Tipo</th><th>Estatus</th><th>Usuario</th><th>Ejecutivo</th></tr></thead>
+      <tbody>
+      {% for s in solicitudes %}
+        <tr>
+          <td><a href="{{ url_for('ejecutivo.detalle', sid=s.id) }}">{{ s.id|folio }}</a></td>
+          <td>{{ s.fecha_solicitud|fecha }}</td><td>{{ s.tipo }}</td><td>{{ m.badge(s.estatus) }}</td>
+          <td>{{ s.numero_usuario or '—' }}</td><td>{{ s.ejecutivo }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="vacio">Sin solicitudes.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{% if es_admin %}
+<div class="dos-columnas">
+  <form method="post" action="{{ url_for('cartera.reasignar', contrato=cliente.contrato) }}" class="tarjeta">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h2>Reasignar ejecutivo</h2>
+    {{ m.seleccion('ejecutivo', 'Nuevo ejecutivo asignado', ejecutivos, {'ejecutivo': cliente.ejecutivo_asignado}, {}, 'required') }}
+    <div class="campo"><label for="motivo-reasignar">Motivo</label><textarea id="motivo-reasignar" name="motivo" rows="2" maxlength="300" required></textarea></div>
+    <button class="boton" type="submit">Reasignar</button>
+  </form>
+  <form method="post" action="{{ url_for('cartera.eliminar', contrato=cliente.contrato) }}" class="tarjeta" data-confirmar="¿Eliminar el contrato {{ cliente.contrato }} y todos sus usuarios del padrón? Úsalo solo para corregir errores de captura o carga.">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h2>Eliminar contrato del padrón</h2>
+    <p class="muted">Solo para corregir errores de captura o carga. No es una baja formal del cliente.</p>
+    <div class="campo"><label for="motivo-eliminar">Motivo</label><textarea id="motivo-eliminar" name="motivo" rows="2" maxlength="300" required></textarea></div>
+    <button class="boton peligro" type="submit">Eliminar contrato</button>
+  </form>
+</div>
+{% endif %}
+
+<section class="tarjeta">
+  <h2>Historial del padrón</h2>
+  <div class="tabla-scroll">
+    <table>
+      <thead><tr><th>Fecha</th><th>Usuario</th><th>Origen</th><th>Campo</th><th>Antes</th><th>Después</th><th>Motivo</th></tr></thead>
+      <tbody>
+      {% for h in historial %}
+        <tr>
+          <td>{{ h.fecha|fecha }}</td><td>{{ h.usuario }}</td><td>{{ h.origen }}</td>
+          <td>{{ h.campo }}{% if h.numero_usuario %} ({{ h.numero_usuario }}){% endif %}</td>
+          <td>{{ h.valor_anterior or '—' }}</td><td>{{ h.valor_nuevo or '—' }}</td><td>{{ h.motivo or '' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="vacio">Sin movimientos.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

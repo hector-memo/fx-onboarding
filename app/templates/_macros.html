@@ -1,0 +1,76 @@
+{# Componentes reutilizables. Importar con: {% import "_macros.html" as m with context %} #}
+
+{% macro badge(estatus) -%}
+{%- set clases = {'Pendiente': 'amarillo', 'Listo para operar': 'verde', 'Rechazada': 'rojo', 'Cancelada': 'gris'} -%}
+<span class="etiqueta {{ clases.get(estatus, 'gris') }}">{{ estatus }}</span>
+{%- endmacro %}
+
+{% macro badge_correo(estado) -%}
+{%- set clases = {'Enviado': 'verde', 'Error': 'rojo', 'Pendiente': 'amarillo'} -%}
+<span class="etiqueta {{ clases.get(estado, 'gris') }}">{{ estado }}</span>
+{%- endmacro %}
+
+{% macro error(errores, campo) -%}
+{%- if errores and errores.get(campo) %}<p class="error-campo">{{ errores[campo] }}</p>{% endif -%}
+{%- endmacro %}
+
+{% macro texto(nombre, etiqueta, datos, errores, tipo='text', attrs='', ayuda='') -%}
+{%- set d = datos or {} -%}
+<div class="campo{{ ' con-error' if errores and errores.get(nombre) }}">
+  <label for="{{ nombre }}">{{ etiqueta }}</label>
+  <input type="{{ tipo }}" id="{{ nombre }}" name="{{ nombre }}" value="{{ d.get(nombre)|valor_input }}" {{ attrs|safe }}>
+  {%- if ayuda %}<small>{{ ayuda }}</small>{% endif %}
+  {{ error(errores, nombre) }}
+</div>
+{%- endmacro %}
+
+{% macro area(nombre, etiqueta, datos, errores, attrs='', ayuda='') -%}
+{%- set d = datos or {} -%}
+<div class="campo{{ ' con-error' if errores and errores.get(nombre) }}">
+  <label for="{{ nombre }}">{{ etiqueta }}</label>
+  <textarea id="{{ nombre }}" name="{{ nombre }}" {{ attrs|safe }}>{{ d.get(nombre)|valor_input }}</textarea>
+  {%- if ayuda %}<small>{{ ayuda }}</small>{% endif %}
+  {{ error(errores, nombre) }}
+</div>
+{%- endmacro %}
+
+{% macro seleccion(nombre, etiqueta, opciones, datos, errores, attrs='', vacio='Selecciona…') -%}
+{%- set d = datos or {} -%}
+{%- set actual = d.get(nombre)|valor_input -%}
+<div class="campo{{ ' con-error' if errores and errores.get(nombre) }}">
+  <label for="{{ nombre }}">{{ etiqueta }}</label>
+  <select id="{{ nombre }}" name="{{ nombre }}" {{ attrs|safe }}>
+    {%- if vacio %}<option value="">{{ vacio }}</option>{% endif %}
+    {%- for op in opciones %}
+      {%- if op is string %}{% set v = op %}{% set t = op %}{% else %}{% set v = op[0] %}{% set t = op[1] %}{% endif %}
+      <option value="{{ v }}"{{ ' selected' if v == actual }}>{{ t }}</option>
+    {%- endfor %}
+  </select>
+  {{ error(errores, nombre) }}
+</div>
+{%- endmacro %}
+
+{% macro divisas(opciones, datos, errores) -%}
+{%- set d = datos or {} -%}
+{%- set elegidas = d.get('divisas')|lista -%}
+<div class="campo{{ ' con-error' if errores and errores.get('divisas') }}" role="group" aria-labelledby="et-divisas">
+  <span class="etiqueta-campo" id="et-divisas">Divisas autorizadas</span>
+  <div class="checks">
+    {%- for divisa in opciones %}
+    <label class="check"><input type="checkbox" name="divisas" value="{{ divisa }}"{{ ' checked' if divisa in elegidas }}> {{ divisa }}</label>
+    {%- endfor %}
+  </div>
+  {{ error(errores, 'divisas') }}
+</div>
+{%- endmacro %}
+
+{% macro paginacion(pagina, total, por_pagina) -%}
+{%- set paginas = ((total + por_pagina - 1) // por_pagina) -%}
+{%- if paginas > 1 %}
+<nav class="paginacion" aria-label="Paginación">
+  {% if pagina > 1 %}<a class="boton chico" href="{{ url_con(pagina=pagina - 1) }}">‹ Anterior</a>{% endif %}
+  <span>Página {{ pagina }} de {{ paginas }}</span>
+  {% if pagina < paginas %}<a class="boton chico" href="{{ url_con(pagina=pagina + 1) }}">Siguiente ›</a>{% endif %}
+</nav>
+{%- endif %}
+{%- endmacro %}

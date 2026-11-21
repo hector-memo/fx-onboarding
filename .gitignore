@@ -1,0 +1,12 @@
+.env
+data/
+backups/
+logs/
+outbox/
+datos_ejemplo/
+__pycache__/
+.pytest_cache/
+*.db
+*.db-wal
+*.db-shm
+.venv/

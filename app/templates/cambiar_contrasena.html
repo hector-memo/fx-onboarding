@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block titulo %}Cambiar contraseña{% endblock %}
+{% block contenido %}
+<section class="tarjeta estrecha">
+  <h1>Cambiar contraseña</h1>
+  {% if forzado %}<p class="alerta aviso">Tu contraseña es temporal. Cámbiala para continuar.</p>{% endif %}
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {{ m.texto('actual', 'Contraseña actual', {}, errores, 'password', 'autocomplete="current-password" required') }}
+    {{ m.texto('nueva', 'Nueva contraseña', {}, errores, 'password', 'autocomplete="new-password" minlength="8" required', 'Mínimo 8 caracteres, con letras y números') }}
+    {{ m.texto('confirmar', 'Confirmar nueva contraseña', {}, errores, 'password', 'autocomplete="new-password" required') }}
+    <button class="boton primario ancho" type="submit">Guardar</button>
+  </form>
+</section>
+{% endblock %}

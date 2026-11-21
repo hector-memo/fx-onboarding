@@ -1,0 +1,9 @@
+{% import "_macros.html" as m with context %}
+<div class="grid">
+  {{ m.seleccion('grupo_spot', 'Grupo de parametrización spot', cat.grupos_spot, datos, errores, 'required') }}
+  {{ m.seleccion('multiaprobacion', 'Multiaprobación', ['Sí', 'No'], datos, errores, 'required') }}
+  {{ m.seleccion('multiabono', 'Multiabono', ['Sí', 'No'], datos, errores, 'required') }}
+  {{ m.texto('limite_operacion', 'Límite por operación (USD)', datos, errores, 'number', 'min="0.01" step="0.01"', 'Opcional') }}
+  {{ m.texto('limite_diario', 'Límite diario (USD)', datos, errores, 'number', 'min="0.01" step="0.01"', 'Opcional. Si capturas ambos, debe ser mayor o igual al límite por operación') }}
+</div>
+{{ m.divisas(cat.divisas, datos, errores) }}

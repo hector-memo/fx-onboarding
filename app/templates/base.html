@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Inicio{% endblock %} · FX Onboarding</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+<header class="barra">
+  <a class="marca" href="{{ url_for('auth.inicio') }}">FX Onboarding</a>
+  {% if usuario_actual %}
+  {% set ep = request.endpoint or '' %}
+  <nav aria-label="Principal">
+    {% if es_admin %}
+      <a href="{{ url_for('admin.solicitudes') }}" class="{{ 'activo' if ep.startswith('admin.') }}">Solicitudes</a>
+      <a href="{{ url_for('cartera.lista') }}" class="{{ 'activo' if ep.startswith('cartera.') }}">Cartera de clientes</a>
+      <a href="{{ url_for('padron_admin.carga') }}" class="{{ 'activo' if ep in ('padron_admin.carga', 'padron_admin.subir') }}">Carga inicial</a>
+      <a href="{{ url_for('padron_admin.agregar_cliente') }}" class="{{ 'activo' if ep in ('padron_admin.agregar_cliente', 'padron_admin.agregar_usuario') }}">Captura manual</a>
+      <a href="{{ url_for('usuarios_admin.lista') }}" class="{{ 'activo' if ep.startswith('usuarios_admin.') }}">Usuarios</a>
+    {% else %}
+      <a href="{{ url_for('ejecutivo.mis_solicitudes') }}" class="{{ 'activo' if ep == 'ejecutivo.mis_solicitudes' }}">Mis solicitudes</a>
+      <a href="{{ url_for('cartera.lista') }}" class="{{ 'activo' if ep.startswith('cartera.') }}">Mi cartera</a>
+    {% endif %}
+    <a href="{{ url_for('formularios.alta') }}" class="{{ 'activo' if ep == 'formularios.alta' }}">Nueva alta</a>
+    <a href="{{ url_for('formularios.cambio') }}" class="{{ 'activo' if ep == 'formularios.cambio' }}">Cambio de permisos</a>
+  </nav>
+  <div class="sesion">
+    {% set etiqueta_campana = 'Notificaciones: ' ~ (notif_sin_leer ~ ' sin leer' if notif_sin_leer else 'ninguna sin leer') %}
+    <a class="campana{{ ' activo' if ep.startswith('notificaciones.') }}" href="{{ url_for('notificaciones.lista') }}"
+       title="{{ etiqueta_campana }}" aria-label="{{ etiqueta_campana }}">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg>
+      {% if notif_sin_leer %}<span class="globo">{{ notif_texto }}</span>{% endif %}
+    </a>
+    <span>{{ usuario_actual.nombre }}{% if es_admin %} · Admin{% endif %}</span>
+    <a href="{{ url_for('auth.cambiar_contrasena') }}">Contraseña</a>
+    <form method="post" action="{{ url_for('auth.logout') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="enlace" type="submit">Salir</button>
+    </form>
+  </div>
+  {% endif %}
+</header>
+<main class="contenedor">
+  {% with mensajes = get_flashed_messages(with_categories=true) %}
+    {% for categoria, mensaje in mensajes %}
+      <p class="alerta {{ categoria if categoria in ('ok', 'error', 'aviso', 'info') else 'info' }}" role="status">{{ mensaje }}</p>
+    {% endfor %}
+  {% endwith %}
+  {% block contenido %}{% endblock %}
+</main>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

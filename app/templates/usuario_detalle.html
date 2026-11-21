@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block titulo %}{{ u.usuario }}{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>
+      {{ u.nombre }}
+      {% if u.activo %}<span class="etiqueta verde">Activo</span>{% else %}<span class="etiqueta gris">Inactivo</span>{% endif %}
+      {% if bloqueado %}<span class="etiqueta rojo">Bloqueado</span>{% endif %}
+      {% if u.activo and u.debe_cambiar %}<span class="etiqueta amarillo">Contraseña temporal</span>{% endif %}
+    </h1>
+    <p class="muted">Usuario «{{ u.usuario }}» · {{ 'Administrador' if u.rol == 'admin' else 'Ejecutivo' }}{% if es_yo %} · esta es tu cuenta{% endif %}</p>
+  </div>
+  <div class="acciones">
+    <a class="boton" href="{{ url_for('usuarios_admin.lista') }}">Volver</a>
+  </div>
+</div>
+
+<div class="dos-columnas">
+  <form method="post" class="tarjeta">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h2>Datos</h2>
+    {{ m.texto('nombre', 'Nombre completo', datos, errores, 'text', 'maxlength="150" required') }}
+    {{ m.texto('correo', 'Correo', datos, errores, 'email', 'maxlength="150" required') }}
+    {{ m.seleccion('rol', 'Rol', roles, datos, errores, 'disabled' if es_yo else 'required', '') }}
+    {% if es_yo %}<p class="muted">No puedes cambiar tu propio rol.</p>{% endif %}
+    <button class="boton primario" type="submit">Guardar cambios</button>
+  </form>
+
+  <section class="tarjeta">
+    <h2>Contraseña y acceso</h2>
+    <form method="post" action="{{ url_for('usuarios_admin.restablecer', usuario=u.usuario) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {{ m.texto('contrasena', 'Nueva contraseña temporal', {}, errores, 'text', 'minlength="8" autocomplete="off" required', 'Se le pedirá cambiarla al entrar. También quita el bloqueo.') }}
+      <button class="boton" type="submit">Restablecer contraseña</button>
+    </form>
+    {% if bloqueado %}
+    <form method="post" action="{{ url_for('usuarios_admin.desbloquear', usuario=u.usuario) }}" class="en-linea" style="margin-top:.75rem">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <p class="muted">Cuenta bloqueada por intentos fallidos.</p>
+      <button class="boton" type="submit">Desbloquear sin cambiar contraseña</button>
+    </form>
+    {% endif %}
+  </section>
+</div>
+
+{% if u.rol == 'ejecutivo' %}
+<section class="tarjeta">
+  <h2>Cartera</h2>
+  <p>
+    <strong>{{ contratos }}</strong> contrato(s) asignado(s) ·
+    <strong>{{ pendientes }}</strong> solicitud(es) pendiente(s).
+    <a href="{{ url_for('cartera.lista', ejecutivo=u.usuario) }}">Ver contratos</a> ·
+    <a href="{{ url_for('admin.solicitudes', ejecutivo=u.usuario, estatus='Pendiente') }}">Ver pendientes</a>
+  </p>
+  {% if contratos or pendientes %}
+  <form method="post" action="{{ url_for('usuarios_admin.transferir', usuario=u.usuario) }}" data-confirmar="¿Transferir todos los contratos y solicitudes pendientes de {{ u.usuario }}?">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p class="muted">Pasa todos sus contratos y solicitudes pendientes a otro ejecutivo (por ejemplo, si cambia de cartera o deja el equipo). Queda registrado en el historial de cada contrato y solicitud.</p>
+    <div class="grid">
+      {{ m.seleccion('transferir_a', 'Transferir a', destinos, {}, {}, 'required') }}
+      <div class="campo"><label for="motivo-transferir">Motivo</label><input id="motivo-transferir" name="motivo" maxlength="300" required></div>
+    </div>
+    <button class="boton" type="submit">Transferir cartera</button>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if not es_yo %}
+<section class="tarjeta">
+  {% if u.activo %}
+  <h2>Desactivar usuario</h2>
+  <form method="post" action="{{ url_for('usuarios_admin.desactivar', usuario=u.usuario) }}" data-confirmar="¿Desactivar a {{ u.usuario }}? Ya no podrá iniciar sesión.">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p class="muted">Ya no podrá iniciar sesión (si tiene la sesión abierta, se cierra). Sus solicitudes y su historial se conservan.</p>
+    <div class="grid">
+      {% if u.rol == 'ejecutivo' and (contratos or pendientes) %}
+        {{ m.seleccion('transferir_a', 'Transferir su cartera a', destinos, {}, {}, 'required') }}
+      {% endif %}
+      <div class="campo"><label for="motivo-desactivar">Motivo</label><input id="motivo-desactivar" name="motivo" maxlength="300" required></div>
+    </div>
+    <button class="boton peligro" type="submit">Desactivar</button>
+  </form>
+  {% else %}
+  <h2>Reactivar usuario</h2>
+  <form method="post" action="{{ url_for('usuarios_admin.reactivar', usuario=u.usuario) }}" class="en-linea">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p class="muted">Podrá volver a iniciar sesión con su contraseña actual. Si no la recuerda, restablécela.</p>
+    <button class="boton primario" type="submit">Reactivar</button>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="tarjeta">
+  <h2>Historial</h2>
+  <div class="tabla-scroll">
+    <table>
+      <thead><tr><th>Fecha</th><th>Acción</th><th>Realizado por</th><th>Detalle</th></tr></thead>
+      <tbody>
+      {% for h in historial %}
+        <tr><td>{{ h.fecha|fecha }}</td><td>{{ h.accion }}</td><td>{{ h.realizado_por }}</td><td>{{ h.detalle or '' }}</td></tr>
+      {% else %}
+        <tr><td colspan="4" class="vacio">Sin movimientos registrados.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block titulo %}Mis solicitudes{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <div>
+    <h1>Mis solicitudes</h1>
+    <p class="muted">Todo lo que has enviado, de lo más reciente a lo más antiguo.</p>
+  </div>
+  <div class="acciones">
+    <a class="boton primario" href="{{ url_for('formularios.alta') }}">Nueva alta</a>
+    <a class="boton" href="{{ url_for('formularios.cambio') }}">Cambio de permisos</a>
+    <a class="boton" href="{{ url_for('cartera.lista') }}">Mi cartera</a>
+  </div>
+</div>
+
+{% include "_contadores_solicitudes.html" %}
+
+<form class="tarjeta filtros" method="get">
+  {{ m.seleccion('estatus', 'Estatus', ESTATUS, filtros, {}, '', 'Todos') }}
+  {{ m.seleccion('tipo', 'Tipo', TIPOS, filtros, {}, '', 'Todos') }}
+  {{ m.texto('desde', 'Desde', filtros, {}, 'date') }}
+  {{ m.texto('hasta', 'Hasta', filtros, {}, 'date') }}
+  {{ m.texto('q', 'Buscar', filtros, {}, 'search', 'placeholder="Contrato, usuario, cliente o folio"') }}
+  <div class="acciones">
+    <button class="boton primario" type="submit">Filtrar</button>
+    <a class="boton" href="{{ url_for('ejecutivo.mis_solicitudes') }}">Limpiar</a>
+  </div>
+</form>
+
+<div class="tabla-scroll">
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Fecha de envío</th><th>Tipo</th><th>Estatus</th><th>Contrato</th><th>Cliente</th><th>Usuario</th><th>Fecha de atención</th></tr>
+    </thead>
+    <tbody>
+    {% for s in filas %}
+      <tr>
+        <td><a href="{{ url_for('ejecutivo.detalle', sid=s.id) }}">{{ s.id|folio }}</a></td>
+        <td>{{ s.fecha_solicitud|fecha }}</td>
+        <td>{{ s.tipo }}</td>
+        <td>{{ m.badge(s.estatus) }}</td>
+        <td>{{ s.contrato }}</td>
+        <td><a href="{{ url_for('ejecutivo.detalle', sid=s.id) }}">{{ s.nombre_cliente }}</a></td>
+        <td>{{ s.numero_usuario or '—' }}</td>
+        <td>{{ (s.fecha_atencion|fecha) or '—' }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8" class="vacio">No hay solicitudes con estos filtros.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{{ m.paginacion(pagina, total, por_pagina) }}
+{% endblock %}
